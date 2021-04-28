@@ -39,8 +39,9 @@ router.put('/put', function(req, res, next) {
         if (id > 0) {
             //数据库有记录
             userId = id;
-            let updateData = ''
-                // console.log("id=" + id);
+            let updateData = '';
+            let model_sql = '';
+            // console.log("id=" + id);
             if (usersList[id - 1].isStop == true) {
                 //停止运行状态，更新userList数据
                 usersList[id - 1].runStatus = 1;
@@ -51,26 +52,18 @@ router.put('/put', function(req, res, next) {
                 usersList[id - 1].countDown = data.sleeptime;
                 usersList[id - 1].stopTime = null;
                 //更新数据库数据
-                updateData = [
-                    ['runStatus', 1],
-                    ['firstOnlineTime', nowTime],
-                    ['lastRefreshTime', nowTime],
-                    ['isStop', 'false'],
-                    ['isFist', 'false'],
-                    ['countDown', data.sleeptime],
-                    ['stopTime', 'null']
-                ]
+                model_sql = 'runStatus = ?,firstOnlineTime=?,lastRefreshTime=?,isStop=?,isFist=?,countDown=?,stopTime=? ';
+                updateData = [1, nowTime, nowTime, 'false', 'false', data.sleeptime, 'null']
             } else {
                 //正在运行中
+                usersList[id - 1].runStatus = 1;
                 usersList[id - 1].lastRefreshTime = nowTime;
                 usersList[id - 1].countDown = data.sleeptime;
                 //更新数据库数据
-                updateData = [
-                    ['lastRefreshTime', nowTime],
-                    ['countDown', data.sleeptime],
-                ]
+                model_sql = 'lastRefreshTime = ?,countDown = ?';
+                updateData = [nowTime, data.sleeptime];
             }
-            updateSql(updateData, userId);
+            updateSql(model_sql, updateData, userId);
         } else if (id == -1) {
             //数据库无记录
             // console.log("没有数据");
@@ -100,19 +93,47 @@ router.put('/put', function(req, res, next) {
 router.put('/stop', (req, res, next) => {
     let data = req.body;
     queryId(data.addres, (id) => {
+        let nowTime = getTime()
+            // console.log("id:" + id);
         usersList[id - 1].runStatus = 0;
-        usersList[id - 1].stopTime = getTime();
+        usersList[id - 1].stopTime = nowTime;
         usersList[id - 1].isStop = true;
-        let v3 = [
-            ['runStatus', 0],
-            ['stopTime', getTime()],
-            ['runStisStopatus', 'true'],
-        ]
-        updateSql(v3, id);
+        let v3 = [0, nowTime, 'true']
+        let model_sql = 'runStatus = ?,stopTime = ?,isStop = ?'
+        updateSql(model_sql, v3, id);
+        // console.log(usersList);
         stopTimer(id);
     });
     res.send("停止成功");
 });
+//修改name属性
+router.get('/setname', (req, res, next) => {
+    let { id, name } = req.query;
+    if (id > usersList.length || id == undefined || name == undefined) {
+        res.send("参数错误");
+        return;
+    }
+    setName(id, name);
+    res.send("修改成功");
+})
+
+/**
+ * 设置name属性
+ * @param {*id} id 
+ * @param {*name} name 
+ */
+function setName(id, name) {
+    let sql = `update users set name = "${name}" where id=${id};`
+        // console.log(sql);
+    querySql(sql, (res) => {
+
+    });
+    try {
+        usersList[id - 1].name = name;
+    } catch (error) {
+
+    }
+}
 
 
 //获取时间

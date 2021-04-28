@@ -19,6 +19,7 @@ connection.connect((err) => {
 });
 //从数据库查询数据
 function querySql(sql, callback) {
+    // console.log(sql);
     connection.query(sql, function(error, results, fields) {
         if (error)
             throw error;
@@ -37,7 +38,7 @@ function insertSql(sql) {
     connection.query(sql, function(error, results, fields) {
         if (error) throw error;
         //打印信息
-        console.log('The solution is: ', results);
+        // console.log('The solution is: ', results);
     });
     // connection.end();
 }
@@ -47,14 +48,14 @@ function insertSql(sql) {
  * @param {要更新的数据数组} values 
  * @param {*要更新的数据id} id 
  */
-function updateSql(values, id) {
-    let model_sql = '? = ?';
-    let sql = '';
-    values.forEach((item, index) => {
-        sql += mysql.format(model_sql, item) + ' '
-    })
-    sql = `update users set ${sql} where id = ${id}`
-        // console.log(sql);
-}
 
+function updateSql(model_sql, values, id) {
+    // var model_sql = 'runStatus = ?,firstOnlineTime=?,lastRefreshTime=?,isStop=?,isFist=?,countDown=?,stopTime=? ';
+    let sql = mysql.format(model_sql, values);
+    sql = `update users set ${sql} where id = ${id}`;
+    // console.log(sql);
+    connection.query(sql, function(error, results, fields) {
+        if (error) throw error;
+    })
+}
 module.exports = { querySql, insertSql, updateSql };
